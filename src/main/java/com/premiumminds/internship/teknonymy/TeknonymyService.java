@@ -1,7 +1,4 @@
 package com.premiumminds.internship.teknonymy;
-
-import java.time.LocalDateTime;
-import java.util.Deque;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -18,20 +15,9 @@ class TeknonymyService implements ITeknonymyService {
             if (person.children() == null || person.children().length == 0) {
                 return "";
             }
-            Deque<AuxWrapper> list = bfs(person);
+            Tuple<Person, Integer> max = bfs(person);
 
-            AuxWrapper oldest = list.pop();
-            Integer generation = oldest.getInt();
-            for (AuxWrapper auxWrapper : list) {
-                if (auxWrapper.getInt() == generation) {
-                    if (auxWrapper.getDateOfBirth().isBefore(oldest.getDateOfBirth())) {
-                        oldest = auxWrapper;
-                    }
-                } else {
-                    break;
-                }
-            }
-            return transformIntoString(person, oldest.name, oldest.getInt());
+            return transformIntoString(person, max.getFirst().name(), max.getLast());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -40,89 +26,84 @@ class TeknonymyService implements ITeknonymyService {
 
     }
 
-    private String transformIntoString(Person person, String name, int generation) {
-        StringBuilder str = new StringBuilder();
-        String genderPrefix = (person.sex() == 'M') ? "father" : "mother";
-
-        if (generation == 1) {
-            str.append(genderPrefix);
-        } else if (generation == 2) {
-            str.append("grand").append(genderPrefix);
-        } else {
-            // For generations greater than 2, add "great-" prefix
-            for (int i = 0; i < generation - 2; i++) {
-                str.append("great-");
-            }
-            str.append("grand").append(genderPrefix);
-        }
-        str.append(" of ");
-        str.append(name);
-        return str.toString();
-    }
-
-    private Deque<AuxWrapper> bfs(Person person) {
+    private Tuple<Person, Integer> bfs(Person person) {
+        
         Queue<Tuple<Person, Integer>> queue = new LinkedList<>();
-        Deque<AuxWrapper> ret = new LinkedList<>();
-
-        queue.add(new Tuple<>(person, 0));
+        Tuple<Person, Integer> max = new Tuple<>(person, 0);
+        queue.add(max);
 
         while (!queue.isEmpty()) {
 
             Tuple<Person, Integer> current = queue.poll();
 
-            for (Person son : current.fst().children()) {
+            for (Person son : current.getFirst().children()) {
+
                 if (son.children() == null || son.children().length == 0) {
-                    ret.addFirst(new AuxWrapper(son, current.lst() + 1));
+
+                    boolean furtherGeneration = current.getLast() + 1 > max.getLast();
+                    boolean sameGenerationAndOlder = current.getLast() + 1 == max.getLast()
+                            && son.dateOfBirth().isBefore(max.getFirst().dateOfBirth());
+
+                    if (furtherGeneration || sameGenerationAndOlder) {
+
+                        max = new Tuple<>(son, current.getLast() + 1);
+                    }
+
                 } else {
-                    queue.add(new Tuple<>(son, current.lst() + 1));
+                    queue.add(new Tuple<>(son, current.getLast() + 1));
                 }
             }
 
         }
-        return ret;
-    }
-
-    class AuxWrapper {
-        private int i;
-        private String name;
-        private LocalDateTime dateOfBirth;
-
-        public AuxWrapper(Person person, int i) {
-            this.name = person.name();
-            this.i = i;
-            dateOfBirth = person.dateOfBirth();
-        }
-
-        public int getInt() {
-            return i;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public LocalDateTime getDateOfBirth() {
-            return dateOfBirth;
-        }
-
+        return max;
     }
 
     class Tuple<A, B> {
+
         private final A first;
         private final B second;
 
         public Tuple(A first, B second) {
+
             this.first = first;
             this.second = second;
         }
 
-        public A fst() {
+        public A getFirst() {
             return first;
         }
 
-        public B lst() {
+        public B getLast() {
             return second;
         }
     }
 
+    private String transformIntoString(Person person, String name, int generation) {
+
+        StringBuilder str = new StringBuilder();
+        String genderPrefix = (person.sex() == 'M') ? "father" : "mother";
+
+        if (generation == 1) {
+
+            str.append(genderPrefix);
+
+        } else if (generation == 2) {
+
+            str.append("grand").append(genderPrefix);
+
+        } else {
+
+            for (int i = 0; i < generation - 2; i++) {
+
+                str.append("great-");
+
+            }
+
+            str.append("grand").append(genderPrefix);
+
+        }
+        str.append(" of ");
+        str.append(name);
+        return str.toString();
+    }
 }
