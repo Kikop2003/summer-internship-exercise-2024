@@ -28,7 +28,7 @@ class TeknonymyService implements ITeknonymyService {
 
     /**
      * Method to get the oldest person of the last generation
-     * of the person family tree
+     * of the person family tree using breadth first search
      * 
      * @param Person person
      * @return Pair with the person and his generation
