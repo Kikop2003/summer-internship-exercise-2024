@@ -1,4 +1,5 @@
 package com.premiumminds.internship.teknonymy;
+
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -15,8 +16,7 @@ class TeknonymyService implements ITeknonymyService {
             if (person.children() == null || person.children().length == 0) {
                 return "";
             }
-            Tuple<Person, Integer> max = bfs(person);
-
+            Pair<Person, Integer> max = bfs(person);
             return transformIntoString(person, max.getFirst().name(), max.getLast());
 
         } catch (Exception e) {
@@ -26,15 +26,22 @@ class TeknonymyService implements ITeknonymyService {
 
     }
 
-    private Tuple<Person, Integer> bfs(Person person) {
-        
-        Queue<Tuple<Person, Integer>> queue = new LinkedList<>();
-        Tuple<Person, Integer> max = new Tuple<>(person, 0);
+    /**
+     * Method to get the oldest person of the last generation
+     * of the person family tree
+     * 
+     * @param Person person
+     * @return Pair with the person and his generation
+     */
+    private Pair<Person, Integer> bfs(Person person) {
+
+        Queue<Pair<Person, Integer>> queue = new LinkedList<>();
+        Pair<Person, Integer> max = new Pair<>(person, 0);
         queue.add(max);
 
         while (!queue.isEmpty()) {
 
-            Tuple<Person, Integer> current = queue.poll();
+            Pair<Person, Integer> current = queue.poll();
 
             for (Person son : current.getFirst().children()) {
 
@@ -46,11 +53,11 @@ class TeknonymyService implements ITeknonymyService {
 
                     if (furtherGeneration || sameGenerationAndOlder) {
 
-                        max = new Tuple<>(son, current.getLast() + 1);
+                        max = new Pair<>(son, current.getLast() + 1);
                     }
 
                 } else {
-                    queue.add(new Tuple<>(son, current.getLast() + 1));
+                    queue.add(new Pair<>(son, current.getLast() + 1));
                 }
             }
 
@@ -58,26 +65,15 @@ class TeknonymyService implements ITeknonymyService {
         return max;
     }
 
-    class Tuple<A, B> {
-
-        private final A first;
-        private final B second;
-
-        public Tuple(A first, B second) {
-
-            this.first = first;
-            this.second = second;
-        }
-
-        public A getFirst() {
-            return first;
-        }
-
-        public B getLast() {
-            return second;
-        }
-    }
-
+    /**
+     * Method that returns the string that represents the teknonymy a person knowing
+     * its name, its descendant and the number of generations they are apart
+     * 
+     * @param Person Descendant
+     * @param String name of the person that is receiving the teknonymy
+     * @param int    generation number of generations apart
+     * @return String with the teknonymy
+     */
     private String transformIntoString(Person person, String name, int generation) {
 
         StringBuilder str = new StringBuilder();
